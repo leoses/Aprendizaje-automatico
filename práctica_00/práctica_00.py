@@ -79,12 +79,17 @@ def pinta_grafica():
     plt.savefig('time.png')
     plt.show()
 
-#area = integra_mc(cuadrado, 0, 20000)
-#x1 = np.random.uniform(1,100)
+area = integra_mc(cuadrado, 10, 40)
+x1 = np.random.uniform(1,100)
 #print(type(x1))
+print("Área con numpy: ", area)
 
-#print(area)
-#area2 = scipy.integrate.quad(cuadrado, 0,20)
-#print(area2)
+area = integra_mc_2(cuadrado, 10, 40)
+x1 = np.random.uniform(1,100)
+#print(type(x1))
+print("Área con bucles: ", area)
+
+area2 = scipy.integrate.quad(cuadrado, 10, 40)
+print("Área real: ", area2[0])
 #print(type(area))
-pinta_grafica()
+#pinta_grafica()
