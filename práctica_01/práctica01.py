@@ -44,22 +44,19 @@ def regresion_lineal_2():
     datos = carga_csv('ex1data2.csv')
 
     X = datos[:, :-1]
-    np.shape(X)
     Y = datos[:, -1]
-    np.shape(Y)
 
     m = np.shape(X)[0]
     n = np.shape(X)[1]
-
-    normaliza(X)
-    normaliza(Y)
-
+    
+    X_normal = normaliza(X)
     #Añadimos una columna de 1's
-    X = np.hstack([np.ones([m, 1]), X])
+    X_normal[0] = np.hstack([np.ones([m, 1]), X_normal[0]])
 
     alpha = 0.01
+    Theta, Costes = descenso_gradiente(X_normal[0],Y,alpha)
 
-    Thetas, costes = descenso_gradiente(X, Y, alpha)
+    
 
 def coste(X,Y, Thetha):
     m = len(X)
@@ -118,18 +115,16 @@ def normaliza(matriz):
 
     return [matriz_normal, u, s]
 
-def descenso_gradiente(X, Y, alpha):
-    Thetas = np.zeros((np.shape(X)[1],np.shape(X)[0]))
-    
-    #for _ in range(1500):
-    Thetas = gradiente(X, Y, Thetas, alpha)
+def descenso_gradiente(X, Y, alpha, iterations = 1500):
+    Theta = np.zeros(np.shape(X)[1]) # n+1
+    Coste = np.zeros(iterations)
+    for i in range(iterations):
+        Theta = gradiente(X,Y, Theta, alpha)
+        Coste[i] = coste2(X,Y,Theta)
 
-    Coste = coste2(X,Y,Thetas)
+    #Aqui iría la llamada a la función de pintar la grafica que nos pidiesen
 
-    #for ix, iy in np.ndindex(Thetas.shape):
-    #    Coste[ix,iy] = coste2(X,Y,Thetas)
-
-    return [Thetas, Coste]
+    return Theta, Coste
 
 def gradiente(X, Y, Theta, alpha):
     theta_nueva = Theta
