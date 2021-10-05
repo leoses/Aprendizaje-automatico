@@ -134,7 +134,7 @@ def gradiente(X, Y, Theta, alpha):
     aux = (H - Y)
     for i in range(n):
         aux_i = aux * X[:, i]
-        theta_nueva -= (alpha / m) * aux_i.sum()
+        theta_nueva[i] -= (alpha / m) * aux_i.sum()
     return theta_nueva
 
 #regresion_lineal_1()
