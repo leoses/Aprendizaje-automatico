@@ -4,6 +4,7 @@ from numpy.core.numeric import empty_like
 from pandas.io.parsers import read_csv
 import matplotlib.pyplot as plt
 
+
 def carga_csv(s):
     valores = read_csv (s , header=None).to_numpy()
     return valores.astype(float)
@@ -39,6 +40,7 @@ def regresion_lineal_1():
     min_y = t0 + t1*min_x
     max_y = t0 + t1*max_x
     plt.plot([min_x,max_x], [min_y,max_y],color='blue', linewidth=2)
+    plt.savefig('regresionLineal.png')
     plt.show()
 
 def regresion_lineal_2(alpha = 0.01):
@@ -59,7 +61,7 @@ def regresion_lineal_2(alpha = 0.01):
     Theta, Costes = descenso_gradiente(X_normal[0],Y,alpha)
 
     #Aqui iría la llamada a la función de pintar la grafica que nos pidiesen
-    me_quiero_morir_3(Costes)
+    me_quiero_morir_3(Costes, alpha)
 
     return Theta, X_normal
 
@@ -109,19 +111,23 @@ def me_quiero_morir(cosos):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(cosos[0], cosos[1], cosos[2],cmap= plt.get_cmap('rainbow'))
+    ax.view_init(20, -120)
+    plt.savefig('funcionCoste3D.png')
     plt.show()
 
 def me_quiero_morir_v2(cosos):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.contour(cosos[0], cosos[1], cosos[2], np.logspace(-2,3,20),cmap= plt.get_cmap('rainbow'))
+    plt.savefig('funcionCoste2D.png')
     plt.show()
 
-def me_quiero_morir_3(coste):
-    fig = plt.figure()
+def me_quiero_morir_3(coste, alpha):
+    plt.figure()
     ite = 1500
     x = np.linspace(0, ite, ite, endpoint = True)
     plt.plot(x, coste)
+    plt.savefig(str(alpha)+'.png')
     plt.show()
     
 def normaliza(matriz):
@@ -160,23 +166,31 @@ def gradiente(X, Y, Theta, alpha):
 
 def normal(X,Y):
     transpuesta_x = np.transpose(X)
-    Aux = np.linalg.inv(np.dot(transpuesta_x,X))
+    Aux = np.linalg.pinv(np.dot(transpuesta_x,X))
     return np.dot(np.dot(Aux, transpuesta_x), Y)
 
 #regresion_lineal_1()
-#datos = carga_csv('ex1data2.csv')
-#me_quiero_morir(make_data([-10,10],[-1,4],datos[:,0],datos[:,1]))
-#print(normaliza(datos))
-theta_2, x_normal = regresion_lineal_2()
-theta_3 = regresion_lineal_3()
 
-X = [1650,3]
-X_theta2 = (X - x_normal[1])/x_normal[2]
+#datos = carga_csv('ex1data1.csv')
+#t0_t1_coste = make_data([-10,10],[-1,4],datos[:,0],datos[:,1])
+#me_quiero_morir(t0_t1_coste)
+#me_quiero_morir_v2(t0_t1_coste)
 
-X = np.insert(X, 0, 1)
-X_theta2 = np.insert(X_theta2, 0, 1)
+#Calculo por descenso de gradiente
+theta_2, x_normal = regresion_lineal_2(4)
+#Calculo por ecuacion lineal
+#theta_3 = regresion_lineal_3()
 
-print("Coste de descenso de gradiente: " )
-print(np.dot(np.transpose(theta_2),X_theta2))
-print("Coste por ecuación normal: ")
-print(np.dot(np.transpose(theta_3),X))
+#Valores de prueba
+#X = [1650,3]
+#Por descenso de gradiente es necesario normalizar los valores
+#X_theta2 = (X - x_normal[1])/x_normal[2]
+
+#añadimos un 1 al comienzo del vector
+#X = np.insert(X, 0, 1)
+#X_theta2 = np.insert(X_theta2, 0, 1)
+
+#print("Coste de descenso de gradiente: " )
+#print(np.dot(np.transpose(theta_2),X_theta2))
+#print("Coste por ecuación normal: ")
+#print(np.dot(np.transpose(theta_3),X))
