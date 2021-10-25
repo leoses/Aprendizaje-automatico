@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from scipy import optimize
 from scipy.optimize import fmin_tnc
+from sklearn.preprocessing import PolynomialFeatures
 
 #metodo de lectura de ficheros csv
 def carga_csv(s):
@@ -147,17 +148,17 @@ def calcula_porcentaje(X,Y,theta):
     return ev_correct/len(sig) * 100
 
 
-datos = carga_csv('ex2data1.csv')
-X = datos[:, :-1]
-Y = datos[:, -1]
+# datos = carga_csv('ex2data1.csv')
+# X = datos[:, :-1]
+# Y = datos[:, -1]
 
 # Apartado 1.1
 # ----------------------------------------------------------
 # grafica_v1(X,Y)
 
 # Anadimos columna de 1s
-X = np.hstack([np.ones([np.shape(X)[0], 1]), X])
-n=np.shape(X)[1]
+# X = np.hstack([np.ones([np.shape(X)[0], 1]), X])
+# n=np.shape(X)[1]
 
 # Apartado 1.2 & 1.3
 # ----------------------------------------------------------
@@ -174,16 +175,76 @@ n=np.shape(X)[1]
 
 # Apartado 1.4, calculo de theta optima para minimizar funcion de coste
 # ----------------------------------------------------------
-theta_opt = optimizacion(X,Y)
+#theta_opt = optimizacion(X,Y)
 
 # Calculamos coste
-cost = coste_vec(theta_opt,X,Y)
+# cost = coste_vec(theta_opt,X,Y)
 # Mostramos por pantalla para confirmar que el valor es el esperado
-print("Coste minimo con theta optimizada: " + str(cost))
+# print("Coste minimo con theta optimizada: " + str(cost))
 
 # Pintamos la frontera
-pinta_frontera(X,Y,theta_opt)
+# pinta_frontera(X,Y,theta_opt)
 
 # Apartado 1.5, calculo del porcentaje de ejemplos clasificados correctamente
 # ----------------------------------------------------------
-print("Porcentaje de ejemplos calculados correctamente: " + str(calcula_porcentaje(X,Y,theta_opt)) + "%")
+# print("Porcentaje de ejemplos calculados correctamente: " + str(calcula_porcentaje(X,Y,theta_opt)) + "%")
+
+
+
+# Apartado 2.2
+def func_coste_reg(theta,X,Y, lamb):
+    m = len(X)
+    return coste_vec(theta, X, Y) + lamb/2*m * np.sum(theta*theta)
+
+def gradiente_reg(theta, X,Y, lamb):
+    m = len(X)
+    return gradiente(theta, X, Y) + lamb/m * theta
+
+# Apartado 2.2, pintado de frontera circular y optimizacion
+
+def pintaFronteraCircular(theta,X,Y,poly):
+    plt.figure()
+
+    x1_min, x1_max = X[:, 0].min(), X[:, 0].max()
+    x2_min, x2_max = X[:, 1].min(), X[:, 1].max()
+    
+    xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max),
+    np.linspace(x2_min, x2_max))
+    
+    h = func_sigmoid(poly.fit_transform(np.c_[xx1.ravel(),
+    xx2.ravel()]).dot(theta))
+    
+    h = h.reshape(xx1.shape)
+    
+    plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='g')
+
+    # Obtiene un vector con los índices de los ejemplos positivos (1 en reg logistica)
+    pos=np.where(Y == 1)
+    # Obtiene un vector con los índices de los ejemplos negativos (0 en reg logistica)
+    neg=np.where(Y == 0)
+
+    # Dibuja los ejemplos positivos
+    plt.scatter(X[ pos , 0 ] , X[ pos , 1 ] , marker='+' , c='k', label = "Admited")
+    # Dibuja los ejemplos negativos
+    plt.scatter(X[ neg, 0 ] , X[ neg , 1 ] , marker='.' , c='orange', label = "Not Admitted")
+
+
+    plt.show()
+    plt.savefig("boundaryCircular.pdf")
+    plt.close()
+
+# Apartado 2.1
+datos = carga_csv('ex2data2.csv')
+X = datos[:, :-1]
+Y = datos[:, -1]
+
+landa = 0.00001
+poly = PolynomialFeatures(6) # Hasta la sexta potencia
+newX = poly.fit_transform(X)
+
+theta = np.zeros(np.shape(newX)[1])
+print(func_coste_reg(theta, newX,Y, landa))
+
+result = fmin_tnc(func_coste_reg,theta , gradiente_reg , args =(newX, Y, landa))
+
+pintaFronteraCircular(result[0], X, Y, poly)
