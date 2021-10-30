@@ -201,8 +201,7 @@ def gradiente_reg(theta, X,Y, lamb):
     return gradiente(theta, X, Y) + lamb/m * theta
 
 # Apartado 2.2, pintado de frontera circular y optimizacion
-
-def pintaFronteraCircular(theta,X,Y,poly):
+def pintaFronteraCircular(theta,X,Y,poly, landa):
     plt.figure()
 
     x1_min, x1_max = X[:, 0].min(), X[:, 0].max()
@@ -229,22 +228,26 @@ def pintaFronteraCircular(theta,X,Y,poly):
     plt.scatter(X[ neg, 0 ] , X[ neg , 1 ] , marker='.' , c='orange', label = "Not Admitted")
 
 
+    plt.savefig("boundaryCircular" + str(landa) + ".png")
     plt.show()
-    plt.savefig("boundaryCircular.pdf")
     plt.close()
 
-# Apartado 2.1
 datos = carga_csv('ex2data2.csv')
 X = datos[:, :-1]
 Y = datos[:, -1]
 
-landa = 0.00001
+# Apartado 2.1
+landa = 100
 poly = PolynomialFeatures(6) # Hasta la sexta potencia
 newX = poly.fit_transform(X)
 
-theta = np.zeros(np.shape(newX)[1])
-print(func_coste_reg(theta, newX,Y, landa))
+print(np.shape(X)) # (118,2)
+print(np.shape(newX)) # (118, 28)
 
+theta = np.zeros(np.shape(newX)[1])
+print("Valor de la funcion de coste regularizada "+ str(func_coste_reg(theta, newX,Y, landa)))
+
+# Apartado 2.3
 result = fmin_tnc(func_coste_reg,theta , gradiente_reg , args =(newX, Y, landa))
 
-pintaFronteraCircular(result[0], X, Y, poly)
+pintaFronteraCircular(result[0], X, Y, poly, landa)
