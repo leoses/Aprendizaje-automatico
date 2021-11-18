@@ -22,13 +22,12 @@ def coste(theta,X,Y):
 
 # Version vectorizada del metodo de coste
 # Aplicamos formula
-def coste_vec(theta,X,Y):
-    m = len(X)
-    H = func_sigmoid(np.matmul(X, theta)) # h = X * theta
-    transpose_log_h = np.transpose(np.log(H))
-    transpose_log_one_minus_h = np.transpose(np.log(1 - H))
-    return -(1/m) * (np.matmul(transpose_log_h , Y) + np.matmul(transpose_log_one_minus_h , (1-Y)))
-
+def coste_sin_reg(X, y, t1, t2):
+    m = np.shape(X)[0]
+    a1,a2,h = calcula_propagacion(X,t1,t2)
+    part1 = y*np.log(h)
+    part2 = (1-y)*np.log(1-h+1e-9)
+    return (-1/m)*np.sum(part1+part2)
 
 # Version vectorizada del calculo de gradiente
 def gradiente(theta,X,Y):
@@ -52,9 +51,11 @@ def calcula_porcentaje(X,Y,theta):
 
 
 # Apartado 2.2
-def func_coste_reg(theta,X,Y, lamb):
-    m = len(X)
-    return coste_vec(theta, X, Y) + lamb/2*m * np.sum(theta*theta)
+def func_coste_reg(X,y, t1,t2, reg):
+   m = np.shape(X)[0]
+   aux = coste_sin_reg(X, y, t1, t2)
+   otra = (reg/(2*m)) * (np.sum(np.power(t1[1:],2)) +np.sum(np.power(t2[1:], 2)))
+   return aux + otra
 
 def gradiente_reg(theta, X,Y, lamb):
     m = len(X)
@@ -66,36 +67,51 @@ def getEtiqueta(Y, etiqueta):
     # Devolvemos vector con elems pertenecientes a la clase (si ==  0no pertenece, si == 1 si)
     return etiquetas * 1
 
-# APARTADO 1.2 -> resultado 94.13%
-def oneVsAll(X, Y, num_etiquetas, reg):
-    """
-    oneVsAll entrena varios clasificadores por regresión logística con término
-    de regularización 'reg' y devuelve el resultado en una matriz, donde
-    la fila i-ésima corresponde al clasificador de la etiqueta i-ésima
-    """
-    m = X.shape[1]
-    theta = np.zeros((num_etiquetas, m))
-    y_etiquetas = np.zeros((y.shape[0], num_etiquetas))
+def calcula_propagacion(X, theta1, theta2):
+    m = np.shape(X)[0]
+    A1 = np.hstack([np.ones([m,1]),X])
+    Z2 = np.dot(A1, theta1.T)
+    A2 = np.hstack([np.ones([m,1]),func_sigmoid(Z2)])
+    Z3 = np.dot(A2, theta2.T)
+    A3 = func_sigmoid(Z3)
+    return A1, A2, A3
 
-    for i in range(num_etiquetas):
-        y_etiquetas[:,i] = getEtiqueta(y, i)
-    #Cambiamos el 0 por 10 porque si no, todos los valores nos darian 0
-    y_etiquetas[:,0] = getEtiqueta(y, 10)
+def gradiente_regularizacion(gradiente, m, reg, theta):
+	columnaGuardada = gradiente[0]
+	gradiente = gradiente + (reg/m)*theta
+	gradiente[0] = columnaGuardada
+	return gradiente
 
-    for i in range(num_etiquetas):
-        theta[i, :] = fmin_tnc(func=func_coste_reg, x0=theta[i,:], fprime=gradiente_reg, args=(X, y_etiquetas[:,i], reg))[0]
+def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, y, reg):
+	m = np.shape(X)[0]
 
-    resultados = np.zeros(num_etiquetas)
-    for i in range(num_etiquetas):
-        resultados[i] = calcula_porcentaje( X, y_etiquetas[:,i],theta[i,:])
-    print("Evaluacion: ", resultados)
-    print("Evaluacion media: ", resultados.mean())
+	Theta1 = np.reshape(params_rn[:num_ocultas * (num_entradas + 1)] , (num_ocultas, (num_entradas+1)))
+	Theta2 = np.reshape(params_rn[num_ocultas * (num_entradas + 1):] , (num_etiquetas, (num_ocultas+1)))
 
-def calculaPropagacion(x, theta1, theta2):
-    auxX = x
-    s1 = func_sigmoid(np.matmul(theta1, np.insert(auxX, 0, 1)))
-    return func_sigmoid(np.matmul(theta2, np.insert(s1, 0, 1)))
+	Delta1 = np.zeros_like(Theta1)
+	Delta2 = np.zeros_like(Theta2)
 
+	A1, A2, H = calcula_propagacion(X,Theta1, Theta2)
+
+	for t in range(m):
+		a1t = A1[t,:]
+		a2t = A2[t,:]
+		ht = H[t,:]
+		yt = y[t]
+
+		d3t = ht -yt
+		d2t = np.dot(Theta2.T, d3t)*(a2t*(1-a2t))
+
+		Delta1 = Delta1 + np.dot(d2t[1:,np.newaxis], a1t[np.newaxis,:])
+		Delta2 = Delta2 + np.dot(d3t[:,np.newaxis],a2t[np.newaxis,:])
+
+	gradiente1 = Delta1/m
+	gradiente2 = Delta2/m
+
+	gradiente1 = gradiente_regularizacion(gradiente1, m, reg,Theta1)
+	gradiente2 = gradiente_regularizacion(gradiente2, m, reg,Theta2)
+
+	return func_coste_reg(X,y,Theta1,Theta2,reg), np.concatenate([np.ravel(gradiente1),np.ravel(gradiente2)])
 
 # PRACTICA 4 - Apartado 1
 #def randomTheta():
@@ -106,9 +122,10 @@ data = loadmat("ex4data1.mat")
 y = data['y'].ravel() # (5000,1) -> (5000,)
 X = data['X']
 num_etiquetas = 10
+num_ocultas = 25
 
 m = len(y)
-input_size=  X.shape[1]
+input_size = np.shape(X)[1]
 
 y = (y-1)
 y_onehot = np.zeros((m,num_etiquetas)) # (5000,10)
@@ -117,24 +134,27 @@ for i in range(m):
     y_onehot[i][y[i]] =  1
 
 theta = np.zeros((num_etiquetas,X.shape[1]))
-coste_por_ej = coste(theta,X,y_onehot) 
-print("Coste porfa plis funca: " + str(coste_por_ej))
-sample = np.random.choice(X.shape[0] , num_etiquetas)
-#plt.imshow(X[sample,:].reshape(-1,20).T)
-fig , axes = displayData(X[sample,:])
 
-plt.show()
+#Esto era la grafica creo :D
+#coste_por_ej = coste(theta,X,y_onehot) 
+#print("Coste porfa plis funca: " + str(coste_por_ej))
 
-#oneVsAll(X,y, num_etiquetas, 0.1)
-
-## Selecciona aleatoriamente 10 ejemplos y los pinta
 #sample = np.random.choice(X.shape[0] , num_etiquetas)
 #plt.imshow(X[sample,:].reshape(-1,20).T)
-#plt.axis('off')
+#fig , axes = displayData(X[sample,:])
+
 #plt.show()
 
-weights = loadmat ( 'ex4weights.mat')
-theta1 , theta2 = weights['Theta1'] , weights ['Theta2']
+weights = loadmat('ex4weights.mat')
+theta1, theta2 = weights['Theta1'], weights['Theta2']
+	
+num_entradas = np.shape(X)[1]
+
+params_rn = np.concatenate([np.ravel(theta1),np.ravel(theta2)])
+
+costeee, coso = backprop(params_rn,num_entradas,num_ocultas,num_etiquetas,X,y,1)
+
+print(costeee)
 ## Theta1 es de dimensión 25 x 401
 ## Theta2 es de dimensión 10 x 26
 #
