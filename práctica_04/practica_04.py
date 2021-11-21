@@ -9,8 +9,7 @@ from checkNNGradients import checkNNGradients
 
 def func_sigmoid(X):
     return (1 / (1 + np.exp(-X)))
-
-
+  
 def calcula_propagacion(X, theta1, theta2):
     m = np.shape(X)[0]
     A1 = np.hstack([np.ones([m, 1]), X])
@@ -27,6 +26,7 @@ def coste(X, y, t1, t2):
 
 def coste_reg(X, y, t1, t2, reg):
     m = np.shape(X)[0]
+    #En el coste reg no hay que incluir la primera columna de t1 y t2
     otra = (reg/(2*m)) * (np.sum(np.power(t1[1:], 2)) + np.sum(np.power(t2[1:], 2)))
     return coste(X, y, t1, t2) + otra
 
@@ -53,13 +53,14 @@ def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, Y, reg):
     Delta2 = np.zeros_like(Theta2)
 
     for t in range(m):
-        a1t = A1[t, :]
-        a2t = A2[t, :]
-        ht = H[t, :]
-        yt = Y[t]
+        a1t = A1[t, :] # (401,)
+        a2t = A2[t, :] # (26,)
+        ht = H[t, :] # (26,)
+        yt = Y[t] # (10,)
 
-        d3t = ht - yt
-        d2t = np.dot(Theta2.T, d3t)*(a2t*(1-a2t))
+        d3t = ht - yt # (10,)
+        d2t = np.dot(Theta2.T, d3t)*(a2t*(1-a2t)) # (10,)
+
         Delta1 = Delta1 + np.dot(d2t[1:, np.newaxis], a1t[np.newaxis, :])
         Delta2 = Delta2 + np.dot(d3t[:, np.newaxis], a2t[np.newaxis, :])
 
@@ -108,6 +109,13 @@ data = loadmat("ex4data1.mat")
 X = data['X']
 y_original = data['y']  # (5000,1)
 
+#Grafica del apartado 1
+#amount = 100
+#sample = np.random.choice(X.shape[0],amount)
+#res = displayData(X[sample])
+#plt.savefig("ImagenNum.png")
+#plt.show()
+
 num_etiquetas = 10
 num_ocultas = 25
 num_entradas = np.shape(X)[1]
@@ -121,8 +129,8 @@ params_rn = np.concatenate([np.ravel(theta1), np.ravel(theta2)])
 
 cost, gradiente = backprop(
     params_rn, num_entradas, num_ocultas, num_etiquetas, X, y, 1)
-
-#checkNNGradients(backprop, 1)
-print(cost)
+    
+print(np.sum(checkNNGradients(backprop, 1)))
+print("Coste con regularizacion: " + str(cost))
 
 optimize_backprop_and_check(theta1, theta2, num_entradas, num_ocultas, num_etiquetas, 1, X, y, 70, y_original)
