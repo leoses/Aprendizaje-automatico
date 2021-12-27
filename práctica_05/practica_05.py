@@ -152,7 +152,7 @@ def apartado3_2(X,p, xval, landa):
     mat, u, s = normaliza(nuevos_datos(X, p))
     mat = np.hstack([np.ones([np.shape(mat)[0],1]),mat])
 
-    matXval, uXval, sXval = normaliza(nuevos_datos(xval,p))
+    matXval =  (nuevos_datos(xval,p) - u  )/s
     apartado2(mat, y, matXval, yval, landa)
 
 def apartado4_1(X, xVal, y, yVal,p ):
@@ -194,7 +194,7 @@ def apartado4_2( X, XTest,  y, yTest, p, landa):
     matTest = np.hstack([np.ones([np.shape(matTest)[0],1]),matTest])
     
     error = coste_reg(result.x, matTest, yTest, 0)
-    print(error)
+    print("Error para lambda = 3: "  + str(error))
 
 data = loadmat('ex5data1.mat')
 
@@ -210,7 +210,7 @@ yval = data['yval']
 #apartado2(auxX, y, Xval, yval, 0)
 #apartado3(X, 8, 0)
 
-#apartado3_2(X,8,Xval, 1)
+#apartado3_2(X,8,Xval, 100)
 #apartado4_1(X,Xval, y, yval, 8)
 
-#apartado4_2(X,data['Xtest'], y, data['ytest'], 8, 3)
+apartado4_2(X,data['Xtest'], y, data['ytest'], 8, 3)
