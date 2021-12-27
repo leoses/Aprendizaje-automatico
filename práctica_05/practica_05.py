@@ -148,20 +148,69 @@ def apartado3(X, p, landa) :
     # Guardamos imagen
     plt.close()
 
+def apartado3_2(X,p, xval, landa):
+    mat, u, s = normaliza(nuevos_datos(X, p))
+    mat = np.hstack([np.ones([np.shape(mat)[0],1]),mat])
+
+    matXval, uXval, sXval = normaliza(nuevos_datos(xval,p))
+    apartado2(mat, y, matXval, yval, landa)
+
+def apartado4_1(X, xVal, y, yVal,p ):
+    lambdas = np.array([0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10])
+    
+    mat, u , s = normaliza(nuevos_datos(X,p))
+    matXval, uXval, sXval =  normaliza(nuevos_datos(xVal, p))
+
+    mat = np.hstack([np.ones([np.shape(mat)[0],1]),mat])
+    matXval = np.hstack([np.ones([np.shape(matXval)[0],1]),matXval])
+
+    eTraining = np.zeros((len(lambdas),1))
+    eValidation = np.zeros((len(lambdas),1))
+
+    for i in range(len(lambdas)):
+        theta = np.zeros(np.shape(mat)[1])
+        result = minimize(calcula_coste_gradiente_reg_2, theta, args = (mat, y, lambdas[i]), jac = True, method = 'TNC')
+        eTraining[i] = coste_reg(result.x,mat,y,0)
+        eValidation[i] = coste_reg(result.x,matXval,yVal,0)
+
+    plt.figure()
+    plt.plot(lambdas,eTraining,label="Entrenamiento")
+    plt.plot(lambdas,eValidation,label="Validacion")
+    plt.savefig("PruebasLambdas.png")
+    plt.show()
+    plt.close()
+
+
+def apartado4_2( X, XTest,  y, yTest, p, landa):
+    mat, u , s = normaliza(nuevos_datos(X,p))
+    mat = np.hstack([np.ones([np.shape(mat)[0],1]),mat])
+
+    theta = np.zeros(np.shape(mat[1]))
+
+    result = minimize(calcula_coste_gradiente_reg_2, theta, args = (mat, y, landa ), jac = True, method = 'TNC')
+    
+    matTest = nuevos_datos(XTest,p)
+    matTest = ((matTest - u)/s)
+    matTest = np.hstack([np.ones([np.shape(matTest)[0],1]),matTest])
+    
+    error = coste_reg(result.x, matTest, yTest, 0)
+    print(error)
 
 data = loadmat('ex5data1.mat')
 
 y = data['y']
 X = data['X']
-#auxX = np.insert(X, 0,1, axis=1)
 m = np.shape(X)[0]
 auxX = np.hstack([np.ones([m,1]),X])
 
 Xval = data['Xval']
 yval = data['yval']
-Xval = data["Xval"]
-#Xval = np.insert(Xval,0,1,axis=1)
 
-apartado1(X,y)
+#apartado1(X,y)
 #apartado2(auxX, y, Xval, yval, 0)
 #apartado3(X, 8, 0)
+
+#apartado3_2(X,8,Xval, 1)
+#apartado4_1(X,Xval, y, yval, 8)
+
+#apartado4_2(X,data['Xtest'], y, data['ytest'], 8, 3)
