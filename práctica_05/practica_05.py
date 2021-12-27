@@ -63,15 +63,15 @@ def nuevos_datos(X, p) :
 
 
 def apartado1(X, y):
-    m = np.shape(X)[0]
+    #m = np.shape(X)[0]
 
     auxX = np.insert(X, 0, 1, axis=1)
 
     theta = np.array([[1], [1]])
     landa = 0
 
-    coste = coste_reg(theta, auxX, y, landa)
-    g = gradiente_reg_1(theta, auxX, y, landa)
+    #coste = coste_reg(theta, auxX, y, landa)
+    #g = gradiente_reg_1(theta, auxX, y, landa)
 
     result = minimize(calcula_coste_gradiente_reg_1, theta,
                       args=(auxX, y, landa), jac=True, method='TNC')
@@ -97,25 +97,27 @@ def apartado1(X, y):
 def apartado2(X, y, Xval, yval, landa):
     m = np.shape(X)[0]
     mValidacion = np.shape(Xval)[0]
-    errorValidacion = np.zeros([m])
-    errorEntrenamiento = np.zeros([m])
     Xval = np.hstack([np.ones([mValidacion,1]),Xval])
+    
+    eValidation = np.zeros([m])
+    eTraning = np.zeros([m])
+    
     for i in range(1,m+1):
         theta = np.zeros(np.shape(X)[1])
         result = minimize(calcula_coste_gradiente_reg_2, theta, args = (X[0:i], y[0:i,0], landa), jac = True, method = 'TNC')
-        errorEntrenamiento[i-1] = coste_reg(result.x, X[0:i], y[0:i], landa)
-        errorValidacion[i-1] = coste_reg(result.x, Xval, yval, landa)
+        eTraning[i-1] = coste_reg(result.x, X[0:i], y[0:i], landa)
+        eValidation[i-1] = coste_reg(result.x, Xval, yval, landa)
     
     plt.figure()
-    plt.plot(np.linspace(1,11,12,dtype=int), errorEntrenamiento, label='Train')
-    plt.plot(np.linspace(1,11,12,dtype=int), errorValidacion, label='Cross Validation')
+    plt.plot(np.linspace(0,11,12,dtype=int), eTraning, label='Train')
+    plt.plot(np.linspace(0,11,12,dtype=int), eValidation, label='Cross Validation')
     plt.legend()
     plt.title('Learning curve for linear regression')
     plt.xlabel('Number of training examples')
     plt.ylabel('Error')    
+    plt.savefig("curvasAprendizaje.png")
     plt.show()
     # Guardamos imagen
-    plt.savefig("curvasAprendizaje.png")
     plt.close()
 
 
@@ -141,10 +143,9 @@ def apartado3(X, p, landa) :
     aux_x = (nuevos_datos(lineX, p)-u) / s
     lineY = np.hstack([np.ones([len(aux_x),1]),aux_x]).dot(result.x)
     plt.plot(lineX, lineY, '-', c = 'blue')
-    plt.show()
-
-    # Guardamos imagen
     plt.savefig("regPolinomial.png")
+    plt.show()
+    # Guardamos imagen
     plt.close()
 
 
@@ -161,6 +162,6 @@ yval = data['yval']
 Xval = data["Xval"]
 #Xval = np.insert(Xval,0,1,axis=1)
 
-#apartado1(X,y)
+apartado1(X,y)
 #apartado2(auxX, y, Xval, yval, 0)
-apartado3(X, 8, 0)
+#apartado3(X, 8, 0)
