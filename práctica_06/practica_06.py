@@ -103,29 +103,23 @@ def apartado2():
     vocab = getVocabDict()
 
     #Leemos los datos y los convertimos para procesarlos
-    print("generandoSpam")
     spam= genera_0_1(vocab,"spam", 500)
     #todo 1s porque son spam todos
     y_Spam = np.ones(len(spam))
 
-    print("generandoHardHam")
     hardHam = genera_0_1(vocab,"hard_ham", 250)
     y_HardHam = np.zeros(len(hardHam))
 
-    print("generandoEasyHam")
     easyHam= genera_0_1(vocab,"easy_ham", 2551)
     y_EasyHam = np.zeros(len(easyHam))
     
-    print("generaMatrices1")
     x, y = genera_matrices(spam[:int(500*0.6)], hardHam[:int(250*0.6)], easyHam[:int(2551*0.6)],
      y_Spam[:int(500*0.6)], y_HardHam[:int(250*0.6)], y_EasyHam[:int(2551*0.6)])
 
-    print("generaMatrices2")
 
     Xval, yval = genera_matrices(spam[int(500*0.6):int(500*0.9)], hardHam[int(250*0.6):int(250*0.9)], easyHam[int(2551*0.6):int(2551*0.9)],
      y_Spam[int(500*0.6):int(500*0.9)], y_HardHam[int(250*0.6):int(250*0.9)], y_EasyHam[int(2551*0.6):int(2551*0.9)])
 
-    print("generaMatrices3")
 
     Xtest, ytest = genera_matrices(spam[int(500*0.9):], hardHam[int(250*0.9):], easyHam[int(2551*0.9):],
      y_Spam[int(500*0.9):], y_HardHam[int(250*0.9):], y_EasyHam[int(2551*0.9):])
@@ -133,28 +127,18 @@ def apartado2():
 
     C = np.array([ 0.01, 0.03, 0.1, 0.3, 1, 3, 10,30])
     Sigma = np.array([ 0.01, 0.03, 0.1, 0.3, 1, 3, 10,30])
+    acurracyOpt = 0
+    sOpt = {}
 
-    scores = np.zeros((len(C), len(Sigma)))
-    best = np.array([0.,0.])
-    minScore = -1
-
-    #saco los aciertos para cada uno de los casos de prueba
-    for i in range(len(C)): #for que recorre las Cs
-        for j in range(len(Sigma)): #for que recorre las gammas
-            s = svm.SVC(kernel='rbf' , C= C[i], gamma=1 / ( 2 * Sigma[j] **2) )    
-            s.fit(x, y )
-            newScore = s.score(Xval,yval)
-            scores[i][j] = newScore
-            #Si he conseguido un mejor porcentaje me quedo con ela configuracion
-            if newScore > minScore:
-                minScore = newScore
-                best[0]= C[i]
-                best[1]= Sigma[j]
-
-    #Entreno para la mejor de las configuraciones y saco el score de adivinar con los caos de test
-    s = svm.SVC(kernel='rbf' , C=  best[0], gamma=1 / ( 2 * best[1] **2) )    
-    s.fit(x, y)
-    newScore = s.score(Xtest,ytest)
-    print("Porcentaje de aciertos de spam: ", newScore*100 , "%")
+    for c in C: 
+        for sigma in Sigma: 
+            s = svm.SVC(kernel='rbf' , C= c, gamma=1 / ( 2 * sigma **2) )    
+            s.fit(x, y)
+            accuracy = accuracy_score(yval, s.predict(Xval))
+            if accuracy > acurracyOpt:
+                acurracyOpt = accuracy 
+                sOpt = s
+    
+    print("Aciertos de spam: "+ str(accuracy_score(ytest,sOpt.predict(Xtest))*100) + "%")
 
 apartado2()
