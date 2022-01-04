@@ -1,15 +1,10 @@
 import numpy as np
 from numpy.lib.shape_base import column_stack
-from scipy.io import loadmat
 import matplotlib.pyplot as plt
 import sklearn.svm as svm
 from sklearn.metrics import accuracy_score
 from pandas.io.parsers import read_csv
-from process_email import preProcess, email2TokenList
-from get_vocab_dict import getVocabDict
 import codecs
-import seaborn as sns
-#sns.set()
 
 def visualize_boundary(X, y, svm, file_name):
     x1 = np.linspace(X[:, 0].min()-0.01 , X[:, 0].max()+0.01 , 100)
@@ -32,7 +27,6 @@ def carga_csv(s):
     return valores.astype(float)
 
 def apartado1_1():
-    print("Estamos cargando")
     df = read_csv('diabetes-dataset.csv', header=0)
 
     for i in range(1, len(df.columns) - 1):
@@ -51,9 +45,8 @@ def apartado1_1():
             visualize_boundary(auxX, y, s, "C1.png")
 
 def apartado2():
-    print("Estamos cargando")
     data = carga_csv('diabetes-dataset.csv')
-    print("Ya hemos cargado")
+    
     auxy = data[:,-1]
     auxX = data[:, :-1]
 
@@ -100,39 +93,47 @@ def grafica_v1(X, Y, texto1, texto2):
     ax.set_ylabel(texto2, fontsize=10)
 
     # Guardamos en formato png
-    plt.savefig('regresionLogistica_v1.png')
+    plt.savefig(texto1 + 'vs'+ texto2 + '.png')
     # Mostramos por pantalla
     plt.show()
     # Cerramos
     plt.close()
 
-def prueba():
+def dibuja_rel_columnas():
     df = read_csv('diabetes-dataset.csv', header=0)
-
+ 
     for i in range(1, len(df.columns) - 1):
         df[df.columns[i]] = df[df.columns[i]].replace({ 0 : df[df.columns[i]].mean() })
-
+ 
     a = df.to_numpy().astype(float)
-
-    #for col in (df.drop(['Outcome'], axis=1)):
-    #    plt.figure()
-    #    sns.distplot(df[col])
-    #    plt.show()
-
+ 
     X = a[:,:-1]
     y = a[:,-1]
     print(np.shape(X))
-
+ 
     for i in range(0,np.shape(X)[1]):
         for j in range(i+1, np.shape(X)[1]):
             auxX = column_stack((X[:,i], X[:,j]))
             grafica_v1(auxX, y, df.columns[i], df.columns[j])
 
-    #for i,col in enumerate(df.drop(['Pregnancies','Outcome'],axis=1)):
-    #    plt.figure()
-    #    ax1=sns.distplot(df[col][df['Outcome']==1],label='Diabético')
-    #    sns.distplot(df[col][df['Outcome']==0],label='No diabético',ax=ax1)
-    #    plt.legend()
-    #    plt.show()
 
-prueba()
+def dibuja_histogramas():
+    df = read_csv('diabetes-dataset.csv', header=0)
+ 
+    for i in range(1, len(df.columns) - 1):
+        df[df.columns[i]] = df[df.columns[i]].replace({ 0 : df[df.columns[i]].mean() })
+ 
+    for i,col in enumerate(df.drop(['Outcome'],axis=1)):
+        fig = plt.figure()
+        # Adding axes on the figure
+        ax = fig.add_subplot(111)
+        plt.hist(df[col][df['Outcome'] ==0], bins=20, fc=(1, 0, 1.0, 0.7), label="No Diabético")
+        plt.hist(df[col][df['Outcome'] ==1], bins=20,fc=(1.0, 0.64, 0, 0.7) , label="Diabético")
+        plt.legend()
+        ax.set_xlabel( str(df.columns[i]), fontsize=12)
+        ax.set_ylabel("Patients", fontsize=12)
+        plt.savefig(str(df.columns[i]) + '.png')
+        plt.show()
+        plt.close()
+
+dibuja_rel_columnas()
