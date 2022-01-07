@@ -1,12 +1,11 @@
 import numpy as np
 from numpy.lib.shape_base import column_stack
 import matplotlib.pyplot as plt
+from numpy.random import normal
 import sklearn.svm as svm
 from sklearn.metrics import accuracy_score
 from pandas.io.parsers import read_csv
 from scipy.optimize import fmin_tnc
-from sklearn.preprocessing import PolynomialFeatures
-import codecs
 
 def visualize_boundary(X, y, svm, file_name):
     x1 = np.linspace(X[:, 0].min()-0.01 , X[:, 0].max()+0.01 , 100)
@@ -60,9 +59,9 @@ def apartado2():
     ytest = auxy[(int)(2000*0.9):2000]
 
     C = np.array([ 0.01 ,0.03, 0.1, 0.3, 1, 3, 10,30])
-    Sigma = np.array([ 0.01, 0.03, 0.1, 0.3, 1, 3, 10,30])
-    acurracyOpt = 0
-    sOpt = {}
+    #Sigma = np.array([ 0.01, 0.03, 0.1, 0.3, 1, 3, 10,30])
+    #acurracyOpt = 0
+    #sOpt = {}
 
     for c in C: 
         s = svm.SVC(kernel='linear', C = c)    
@@ -217,35 +216,6 @@ def pinta_frontera(X,Y,theta,texto1,texto2):
     # Cerramos
     plt.close()
 
-def pinta_frontera_circular(X,Y,theta,poly,landa,texto1,texto2):
-    plt.figure()
-
-    x1_min, x1_max = X[:, 0].min(), X[:, 0].max()
-    x2_min, x2_max = X[:, 1].min(), X[:, 1].max()
-    
-    xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max),
-    np.linspace(x2_min, x2_max))
-    
-    h = func_sigmoid(poly.fit_transform(np.c_[xx1.ravel(),
-    xx2.ravel()]).dot(theta))
-    
-    h = h.reshape(xx1.shape)
-    
-    plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='g')
-
-    # Obtiene un vector con los índices de los ejemplos positivos (1 en reg logistica)
-    pos=np.where(Y == 1)
-    # Obtiene un vector con los índices de los ejemplos negativos (0 en reg logistica)
-    neg=np.where(Y == 0)
-
-    # Dibuja los ejemplos positivos
-    plt.scatter(X[pos, 0], X[pos, 1], marker='+', c='k', label = "Admited")
-    # Dibuja los ejemplos negativos
-    plt.scatter(X[neg, 0], X[neg, 1], marker='.', c='orange', label = "Not Admitted")
-
-    plt.savefig("boundaryCircular" + str(landa) + ".png")
-    plt.show()
-    plt.close()
 
 def apartado3():
     print("Estamos cargando")
@@ -278,7 +248,33 @@ def apartado3():
             # Pintamos la frontera
             pinta_frontera(auxX,y,theta_opt,df.columns[i], df.columns[j])
 
-def apartado4():
+def normaliza(matriz):
+    #ui = media ; si = desviación típica
+    matriz_normal = np.empty_like(matriz)
+
+    u = np.mean(matriz, axis=0)
+    s = np.std(matriz, axis=0)
+
+    matriz_normal = (matriz - u) / s
+
+    return [matriz_normal, u, s]
+
+def calcula_porcentaje(X,Y,theta):
+    # Calculamos los valores estimados segun la theta que hemos obtenido
+    sig = func_sigmoid(np.matmul(X,theta))
+ 
+    # Comparamos si nuestra estimación es correcta en comparacion con las Y
+    # y devolvemos el numero de ejemplos estimados correctamente
+    # if(sig >= 0.5) -> devuelve 1 y si no devuelve 0
+    # lo comparamos con la y de los casos de entrenamiento y si corresponde
+    # lo hemos calculado bien
+    ev_correct = np.sum((sig >= 0.5) == Y)
+   
+    # Devolvemos el porcentaje
+    return ev_correct/len(sig) * 100
+
+
+def apartado3_1():
     print("Estamos cargando")
     df = read_csv('diabetes-dataset.csv', header=0)
 
@@ -289,22 +285,36 @@ def apartado4():
     X = a[:,:-1]
     y = a[:,-1]
     print("Ya hemos cargado")
+    
+    #Normalizamos los datos
+    X = normaliza(X)[0]
 
-    landa = 100
-    poly = PolynomialFeatures(6) # Hasta la sexta potencia
+    #Ejemplos de entrenamiento
+    entX = X[0:(int)(2000*0.6)]
+    enty = y[0:(int)(2000*0.6)]
+    #Ejemplos de validacion
+    Xval = X[(int)(2000*0.6): (int)(2000*0.9)]
+    yval = y[(int)(2000*0.6): (int)(2000*0.9)]
+    #Ejemplos de test
+    Xtest = X[(int)(2000*0.9):2000]
+    ytest = y[(int)(2000*0.9):2000]
 
-    # Calculo de theta optima para minimizar funcion de coste
-    for i in range(1, np.shape(X)[1]):
-        for j in range(i+1, np.shape(X)[1]):
-            auxX = column_stack((X[:,i], X[:,j]))
-            newX = poly.fit_transform(auxX)
- 
-            theta = np.zeros(np.shape(newX)[1])
-            print("Valor de la funcion de coste regularizada " + str(func_coste_reg(theta, newX, y, landa)))
- 
-            #result = fmin_tnc(func_coste_reg, theta, gradiente_reg, args = (newX, y, landa))
+    # Anadimos columna de 1s
+    auxX = np.hstack([np.ones([np.shape(entX)[0], 1]), entX])
+    n=np.shape(auxX)[1]
+            
+    theta_opt = optimizacion(auxX,enty).ravel()
+    
+    Xval = np.hstack([np.ones([np.shape(Xval)[0], 1]), Xval])
+    print("Porcentaje de ejemplos de validacion clasificados correctamente: " + str(calcula_porcentaje(Xval, yval, theta_opt)) + "%")
 
-            # Pintamos la frontera
-            pinta_frontera_circular(auxX, y, theta, poly, landa, df.columns[i], df.columns[j])
+    Xtest = np.hstack([np.ones([np.shape(Xtest)[0], 1]), Xtest])
+    print("Ejemplos de test clasificados correctamente: " + str(calcula_porcentaje(Xtest, ytest, theta_opt)) + "%")
+    
+    # Calculamos coste
+    cost = coste_vec(theta_opt,auxX,enty)
 
-apartado3()
+    # Mostramos por pantalla para confirmar que el valor es el esperado
+    print("Coste minimo con theta optimizada: " + str(cost))
+
+apartado3_1()
