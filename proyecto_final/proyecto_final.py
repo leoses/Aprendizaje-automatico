@@ -217,6 +217,36 @@ def pinta_frontera(X,Y,theta,texto1,texto2):
     # Cerramos
     plt.close()
 
+def pinta_frontera_circular(X,Y,theta,poly,landa,texto1,texto2):
+    plt.figure()
+
+    x1_min, x1_max = X[:, 0].min(), X[:, 0].max()
+    x2_min, x2_max = X[:, 1].min(), X[:, 1].max()
+    
+    xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max),
+    np.linspace(x2_min, x2_max))
+    
+    h = func_sigmoid(poly.fit_transform(np.c_[xx1.ravel(),
+    xx2.ravel()]).dot(theta))
+    
+    h = h.reshape(xx1.shape)
+    
+    plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='g')
+
+    # Obtiene un vector con los índices de los ejemplos positivos (1 en reg logistica)
+    pos=np.where(Y == 1)
+    # Obtiene un vector con los índices de los ejemplos negativos (0 en reg logistica)
+    neg=np.where(Y == 0)
+
+    # Dibuja los ejemplos positivos
+    plt.scatter(X[pos, 0], X[pos, 1], marker='+', c='k', label = "Admited")
+    # Dibuja los ejemplos negativos
+    plt.scatter(X[neg, 0], X[neg, 1], marker='.', c='orange', label = "Not Admitted")
+
+    plt.savefig("boundaryCircular" + str(landa) + ".png")
+    plt.show()
+    plt.close()
+
 def apartado3():
     print("Estamos cargando")
     df = read_csv('diabetes-dataset.csv', header=0)
@@ -247,5 +277,34 @@ def apartado3():
  
             # Pintamos la frontera
             pinta_frontera(auxX,y,theta_opt,df.columns[i], df.columns[j])
+
+def apartado4():
+    print("Estamos cargando")
+    df = read_csv('diabetes-dataset.csv', header=0)
+
+    for i in range(1, len(df.columns) - 1):
+        df[df.columns[i]] = df[df.columns[i]].replace({ 0 : df[df.columns[i]].mean() })
+
+    a = df.to_numpy().astype(float)
+    X = a[:,:-1]
+    y = a[:,-1]
+    print("Ya hemos cargado")
+
+    landa = 100
+    poly = PolynomialFeatures(6) # Hasta la sexta potencia
+
+    # Calculo de theta optima para minimizar funcion de coste
+    for i in range(1, np.shape(X)[1]):
+        for j in range(i+1, np.shape(X)[1]):
+            auxX = column_stack((X[:,i], X[:,j]))
+            newX = poly.fit_transform(auxX)
+ 
+            theta = np.zeros(np.shape(newX)[1])
+            print("Valor de la funcion de coste regularizada " + str(func_coste_reg(theta, newX, y, landa)))
+ 
+            #result = fmin_tnc(func_coste_reg, theta, gradiente_reg, args = (newX, y, landa))
+
+            # Pintamos la frontera
+            pinta_frontera_circular(auxX, y, theta, poly, landa, df.columns[i], df.columns[j])
 
 apartado3()
