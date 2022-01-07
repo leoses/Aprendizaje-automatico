@@ -6,6 +6,7 @@ import sklearn.svm as svm
 from sklearn.metrics import accuracy_score
 from pandas.io.parsers import read_csv
 from scipy.optimize import fmin_tnc
+from sklearn.preprocessing import PolynomialFeatures
 
 def visualize_boundary(X, y, svm, file_name):
     x1 = np.linspace(X[:, 0].min()-0.01 , X[:, 0].max()+0.01 , 100)
@@ -286,8 +287,8 @@ def apartado3_1():
     y = a[:,-1]
     print("Ya hemos cargado")
     
-    #Normalizamos los datos
-    X = normaliza(X)[0]
+    #Normalizamos los datos (da el mismo resultado normalizando que sin normalizar)
+    #X = normaliza(X)[0]
 
     #Ejemplos de entrenamiento
     entX = X[0:(int)(2000*0.6)]
@@ -301,15 +302,14 @@ def apartado3_1():
 
     # Anadimos columna de 1s
     auxX = np.hstack([np.ones([np.shape(entX)[0], 1]), entX])
-    n=np.shape(auxX)[1]
             
     theta_opt = optimizacion(auxX,enty).ravel()
     
     Xval = np.hstack([np.ones([np.shape(Xval)[0], 1]), Xval])
-    print("Porcentaje de ejemplos de validacion clasificados correctamente: " + str(calcula_porcentaje(Xval, yval, theta_opt)) + "%")
+    print("Porcentaje de ejemplos de validacion clasificados correctamente: " + str(calcula_porcentaje(Xval, yval, theta_opt)) + " %")
 
     Xtest = np.hstack([np.ones([np.shape(Xtest)[0], 1]), Xtest])
-    print("Ejemplos de test clasificados correctamente: " + str(calcula_porcentaje(Xtest, ytest, theta_opt)) + "%")
+    print("Ejemplos de test clasificados correctamente: " + str(calcula_porcentaje(Xtest, ytest, theta_opt)) + " %")
     
     # Calculamos coste
     cost = coste_vec(theta_opt,auxX,enty)
@@ -317,4 +317,4 @@ def apartado3_1():
     # Mostramos por pantalla para confirmar que el valor es el esperado
     print("Coste minimo con theta optimizada: " + str(cost))
 
-apartado3_1()
+apartado3()
