@@ -306,7 +306,6 @@ def reg_logistica():
     # Mostramos por pantalla para confirmar que el valor es el esperado
     print("Coste minimo con theta optimizada: " + str(cost))
 
-# Apartado 2.2
 def func_coste_reg(theta,X,Y, lamb):
     m = len(X)
     return coste_vec(theta, X, Y) + lamb/2*m * np.sum(theta*theta)
@@ -315,7 +314,6 @@ def gradiente_reg(theta, X,Y, lamb):
     m = len(X)
     return gradiente(theta, X, Y) + lamb/m * theta
 
-# Apartado 2.2, pintado de frontera circular y optimizacion
 def pintaFronteraCircular(theta,X,Y,poly, landa, texto1, texto2):
      # Creamos grafica
     fig = plt.figure()
@@ -370,7 +368,6 @@ def reg_logistica_reg_graficas_poly():
     y = a[:,-1]
     print("Ya hemos cargado")
 
-
     for i in range(1, np.shape(X)[1]):
         for j in range(i+1, np.shape(X)[1]):
             
@@ -415,16 +412,34 @@ def regresion_logistica_reg():
     newX = poly.fit_transform(entX)
     Xval = poly.fit_transform(Xval)
     Xtest = poly.fit_transform(Xtest)
-    landas = np.array([ 0.01 ,0.03, 0.1, 0.3, 1, 3])
+    landas = np.array([ 0.00001,0.001,0.01 ,0.03, 0.1, 0.3, 1, 3])
 
+    best_score_val =  0
+    landa_score_val = landas[0]
+    best_score_training = 0
+    landa_score_training = landas[0]
     for landa in landas:
         theta = np.zeros(np.shape(newX)[1])
 
         print("Valor de la funcion de coste regularizada "+ str(func_coste_reg(theta, newX,enty, landa)))
 
         theta_opt = fmin_tnc(func_coste_reg,theta , gradiente_reg , args =(newX, enty, landa))[0]
-        print("Porcentaje de ejemplos de validacion clasificados correctamente: " + str(calcula_porcentaje(Xval, yval, theta_opt)) + " %")
-        print("Ejemplos de test clasificados correctamente: " + str(calcula_porcentaje(Xtest, ytest, theta_opt)) + " %")
+        p_val = calcula_porcentaje(Xval, yval, theta_opt)
+        p_training = calcula_porcentaje(Xtest, ytest, theta_opt)
+        print("Porcentaje de ejemplos de validacion clasificados correctamente: " + str(p_val) + " %")
+        print("Ejemplos de test clasificados correctamente: " + str(p_training) + " %")
+
+        if p_val > best_score_val:
+            best_score_val = p_val
+            landa_score_val = landa
+
+        if p_training > best_score_training:
+            best_score_training = p_training
+            landa_score_training = landa
+    
+    print("Mejores resultados para los ejemplos de validacion: landa = " + str(landa_score_val) + " con un porcentaje de acierto de " + str(best_score_val) + " %")
+    print("Mejores resultados para los ejemplos de test: landa = " + str(landa_score_training) + " con un porcentaje de acierto de " + str(best_score_training) + " %")
 
 
-reg_logistica_reg_graficas_poly()
+
+regresion_logistica_reg()
