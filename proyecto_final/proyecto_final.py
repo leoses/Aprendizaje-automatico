@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.fromnumeric import shape
 from numpy.lib.shape_base import column_stack
 import matplotlib.pyplot as plt
 from numpy.random import normal
@@ -218,7 +219,7 @@ def pinta_frontera(X,Y,theta,texto1,texto2):
     plt.close()
 
 
-def apartado3():
+def reg_logistica_graficas():
     print("Estamos cargando")
     df = read_csv('diabetes-dataset.csv', header=0)
 
@@ -249,16 +250,6 @@ def apartado3():
             # Pintamos la frontera
             pinta_frontera(auxX,y,theta_opt,df.columns[i], df.columns[j])
 
-def normaliza(matriz):
-    #ui = media ; si = desviación típica
-    matriz_normal = np.empty_like(matriz)
-
-    u = np.mean(matriz, axis=0)
-    s = np.std(matriz, axis=0)
-
-    matriz_normal = (matriz - u) / s
-
-    return [matriz_normal, u, s]
 
 def calcula_porcentaje(X,Y,theta):
     # Calculamos los valores estimados segun la theta que hemos obtenido
@@ -275,7 +266,7 @@ def calcula_porcentaje(X,Y,theta):
     return ev_correct/len(sig) * 100
 
 
-def apartado3_1():
+def reg_logistica():
     print("Estamos cargando")
     df = read_csv('diabetes-dataset.csv', header=0)
 
@@ -287,8 +278,6 @@ def apartado3_1():
     y = a[:,-1]
     print("Ya hemos cargado")
     
-    #Normalizamos los datos (da el mismo resultado normalizando que sin normalizar)
-    #X = normaliza(X)[0]
 
     #Ejemplos de entrenamiento
     entX = X[0:(int)(2000*0.6)]
@@ -317,4 +306,125 @@ def apartado3_1():
     # Mostramos por pantalla para confirmar que el valor es el esperado
     print("Coste minimo con theta optimizada: " + str(cost))
 
-apartado3()
+# Apartado 2.2
+def func_coste_reg(theta,X,Y, lamb):
+    m = len(X)
+    return coste_vec(theta, X, Y) + lamb/2*m * np.sum(theta*theta)
+
+def gradiente_reg(theta, X,Y, lamb):
+    m = len(X)
+    return gradiente(theta, X, Y) + lamb/m * theta
+
+# Apartado 2.2, pintado de frontera circular y optimizacion
+def pintaFronteraCircular(theta,X,Y,poly, landa, texto1, texto2):
+     # Creamos grafica
+    fig = plt.figure()
+    
+    # Adding axes on the figure
+    ax = fig.add_subplot(111)
+
+    x1_min, x1_max = X[:, 0].min(), X[:, 0].max()
+    x2_min, x2_max = X[:, 1].min(), X[:, 1].max()
+    
+    xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max),
+    np.linspace(x2_min, x2_max))
+    
+    h = func_sigmoid(poly.fit_transform(np.c_[xx1.ravel(),
+    xx2.ravel()]).dot(theta))
+    
+    h = h.reshape(xx1.shape)
+    
+    plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='g')
+
+    # Obtiene un vector con los índices de los ejemplos positivos (1 en reg logistica)
+    pos=np.where(Y == 1)
+    # Obtiene un vector con los índices de los ejemplos negativos (0 en reg logistica)
+    neg=np.where(Y == 0)
+
+    # Dibuja los ejemplos positivos
+    plt.scatter(X[ pos , 0 ] , X[ pos , 1 ] , marker='+' , c='k', label = "Diabético")
+    # Dibuja los ejemplos negativos
+    plt.scatter(X[ neg, 0 ] , X[ neg , 1 ] , marker='.' , c='orange', label = "No diabético")
+
+     # Anadimos leyenda a la grafica y la posicionamos bien
+    plt.legend(loc = 'upper right')
+
+    # Anadimos el texto a los ejes (como en la grafica que aparece de ejemplo)
+    ax.set_xlabel(texto1, fontsize=10)
+    ax.set_ylabel(texto2, fontsize=10)
+
+    # guardamos grafica
+    plt.savefig("gráficas/Reg_Polinomica/"+ texto1 + texto2 + ".png")
+    plt.show()
+    plt.close()
+
+def reg_logistica_reg_graficas_poly():
+    print("Estamos cargando")
+    df = read_csv('diabetes-dataset.csv', header=0)
+
+    for i in range(1, len(df.columns) - 1):
+        df[df.columns[i]] = df[df.columns[i]].replace({ 0 : df[df.columns[i]].mean() })
+
+    a = df.to_numpy().astype(float)
+    X = a[:,:-1]
+    y = a[:,-1]
+    print("Ya hemos cargado")
+
+
+    for i in range(1, np.shape(X)[1]):
+        for j in range(i+1, np.shape(X)[1]):
+            
+            auxX = column_stack((X[:,i], X[:,j]))
+
+            # Apartado 2.1
+            landa = 1
+            poly = PolynomialFeatures(3) # Hasta la sexta potencia
+            newX = poly.fit_transform(auxX)
+            
+            theta = np.zeros(np.shape(newX)[1])
+            print("Valor de la funcion de coste regularizada "+ str(func_coste_reg(theta, newX,y, landa)))
+
+            # Apartado 2.3
+            result = fmin_tnc(func_coste_reg,theta , gradiente_reg , args =(newX, y, landa))
+
+            pintaFronteraCircular(result[0], auxX, y, poly, landa, df.columns[i], df.columns[j])
+
+def regresion_logistica_reg():
+    print("Estamos cargando")
+    df = read_csv('diabetes-dataset.csv', header=0)
+
+    for i in range(1, len(df.columns) - 1):
+        df[df.columns[i]] = df[df.columns[i]].replace({ 0 : df[df.columns[i]].mean() })
+
+    a = df.to_numpy().astype(float)
+    X = a[:,:-1]
+    y = a[:,-1]
+    print("Ya hemos cargado")
+
+    #Ejemplos de entrenamiento
+    entX = X[0:(int)(2000*0.6)]
+    enty = y[0:(int)(2000*0.6)]
+    #Ejemplos de validacion
+    Xval = X[(int)(2000*0.6): (int)(2000*0.9)]
+    yval = y[(int)(2000*0.6): (int)(2000*0.9)]
+    #Ejemplos de test
+    Xtest = X[(int)(2000*0.9):2000]
+    ytest = y[(int)(2000*0.9):2000]
+
+    poly = PolynomialFeatures(3) # Hasta la tercera potencia
+    newX = poly.fit_transform(entX)
+    Xval = poly.fit_transform(Xval)
+    Xtest = poly.fit_transform(Xtest)
+    landas = np.array([ 0.01 ,0.03, 0.1, 0.3, 1, 3])
+
+    for landa in landas:
+        theta = np.zeros(np.shape(newX)[1])
+
+        print("Valor de la funcion de coste regularizada "+ str(func_coste_reg(theta, newX,enty, landa)))
+
+        theta_opt = fmin_tnc(func_coste_reg,theta , gradiente_reg , args =(newX, enty, landa))[0]
+        print("Porcentaje de ejemplos de validacion clasificados correctamente: " + str(calcula_porcentaje(Xval, yval, theta_opt)) + " %")
+        print("Ejemplos de test clasificados correctamente: " + str(calcula_porcentaje(Xtest, ytest, theta_opt)) + " %")
+
+
+reg_logistica_reg_graficas_poly()
