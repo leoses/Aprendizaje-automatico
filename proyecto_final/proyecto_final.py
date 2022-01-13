@@ -571,7 +571,7 @@ def redes_neuronales():
         A1,A2,H = calcula_propagacion(Xtest,T1, T2)
         maxIndices = np.argmax(H,axis=1) 
         acertados = np.sum(maxIndices==ytest.ravel())
-        print("Porcentaje acertados entrenamiento: " + str(acertados*100/np.shape(H)[0]) + "%")
+        print("Porcentaje acertados test: " + str(acertados*100/np.shape(H)[0]) + "%")
 
 
 redes_neuronales()
